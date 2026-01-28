@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  mysqldb:
+    image: mysql:8.0
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: projects
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: shiv
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - emp-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uadmin", "-pshiv"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: .
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysqldb:
+        condition: service_healthy
+    networks:
+      - emp-net
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+  frontend:
+    image: reactapp
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    networks:
+      - emp-net	  
+
+volumes:
+  db_data:
+
+networks:
+  emp-net:
